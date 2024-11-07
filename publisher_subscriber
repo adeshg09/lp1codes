@@ -1,0 +1,146 @@
+//templates/index.html
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Publisher-Subscriber</title>
+  </head>
+  <body>
+     <div>
+      <h2>Publish Data</h2>
+      <input type="text" id="publisherId" placeholder="Publisher ID" />
+      <input type="text" id="data" placeholder="Data" />
+      <button onclick="publish()">Publish</button>
+    </div>
+
+    <div>
+      <h2>Subscribe to Data</h2>
+      <input type="text" id="subscribeId" placeholder="Publisher ID" />
+      <button onclick="subscribe()">Subscribe</button>
+    </div>
+
+    <div id="dataDisplay"></div>
+
+    <script>
+      function publish() {
+        const publisherId = document.getElementById("publisherId").value;
+        const data = document.getElementById("data").value;
+        fetch("/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publisher_id: publisherId, data: data }),
+        })
+          .then((response) => response.json())
+          .then(() => alert("Data published"))
+          .catch(console.error);
+      }
+
+      function subscribe() {
+        const publisherId = document.getElementById("subscribeId").value;
+        fetch(`/subscribe/${publisherId}`)
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("dataDisplay").innerText = data.error || `Data: ${data.data}`;
+          })
+          .catch(console.error);
+      }
+    </script>
+  </body>
+</html>
+
+//app.py
+
+from flask import Flask, request, jsonify, render_template
+
+app = Flask(__name__)
+data_store = {}
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/publish', methods=['POST'])
+def publish():
+    content = request.json
+    publisher_id, data = content.get('publisher_id'), content.get('data')
+    if not publisher_id or not data:
+        return jsonify({'error': 'Invalid input'}), 400
+    data_store[publisher_id] = data
+    return jsonify({'status': 'success'}), 200
+
+@app.route('/subscribe/<publisher_id>', methods=['GET'])
+def subscribe(publisher_id):
+    data = data_store.get(publisher_id)
+    return jsonify({'data': data}) if data else jsonify({'error': 'No data found'}), 404
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+(* # for running
+# pip install Flask
+# /your-project-directory
+#     /templates
+#         index.html
+#     app.py
+# python app.py
+#  * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+
+
+# app.run(debug=True, host='0.0.0.0', port=8080) if you encounter any error (optional) *)
+
+
+(* Step 3: Prepare for Deployment on Heroku
+3.1. Create a requirements.txt File
+This file lists all the dependencies required by your project. To generate it, run the following command:
+
+bash
+Copy code
+pip freeze > requirements.txt
+This will create a requirements.txt file containing all the installed Python packages.
+
+3.2. Create a Procfile
+The Procfile tells Heroku how to run your application. Create a file named Procfile (no file extension) in your project’s root directory with the following content:
+
+makefile
+Copy code
+web: python app.py
+In this case, the application will start using the app.py file.
+
+3.3. Deploy to Heroku
+Initialize a Git Repository
+Start by initializing a Git repository in your project folder:
+
+bash
+Copy code
+git init
+git add .
+git commit -m "Initial commit"
+Create a Heroku App
+Create a new Heroku app by running:
+
+bash
+Copy code
+heroku create
+This will set up your app on Heroku, providing a unique URL (e.g., https://your-app-name.herokuapp.com).
+
+Push to Heroku
+Deploy your code to Heroku by pushing it to the master branch:
+
+bash
+Copy code
+git push heroku master
+This command will upload your code to Heroku, where it will automatically detect the required environment and begin the deployment process.
+
+Open the Application
+Once the deployment is complete, open your application in the browser with:
+
+bash
+Copy code
+heroku open
+This will launch the app in your default web browser.
+
+Summary
+You’ve successfully built a simple IoT dashboard application with a Flask backend and a basic HTML frontend. The backend provides endpoints for publishing and subscribing to data, while the frontend enables interaction with these endpoints. After finalizing everything, you deployed the application to Heroku, enabling cloud-based access to your dashboard.
+
+ *)
